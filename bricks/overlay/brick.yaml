@@ -1,0 +1,17 @@
+name: overlay
+description: A new brick created with the Mason CLI.
+
+# mason make overlay --packageName flutter_bricks_dvmatyun --on-conflict overwrite
+version: 0.1.0+1
+
+# The following defines the environment for the current brick.
+# It includes the version of mason that the brick requires.
+environment:
+  mason: ">=0.1.0-dev.26 <0.1.0"
+
+vars:
+  packageName:
+    type: string
+    description: Your name
+    default: Dash
+    prompt: What is your name?

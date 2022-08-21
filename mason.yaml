@@ -3,8 +3,8 @@
 bricks:
   # Sample Brick
   # Run `mason make hello` to try it out.
-  sliding_overlay:
-    path: bricks/sliding_overlay
+  overlay:
+    path: bricks/overlay
   # Bricks can also be imported via git url.
   # Uncomment the following lines to import
   # a brick from a remote git url.

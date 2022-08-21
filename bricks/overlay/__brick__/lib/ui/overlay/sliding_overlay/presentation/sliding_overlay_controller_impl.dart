@@ -1,0 +1,1 @@
+class SlidingOverlayControllerImpl implements ISlidingOverlayController {}

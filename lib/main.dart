@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_params.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/sliding_overlay_controller.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/sliding_overlay_controller_impl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,6 +43,31 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  late final ISlidingOverlayController _slidingOverlayController;
+
+  @override
+  void initState() {
+    super.initState();
+    _slidingOverlayController = SlidingOverlayControllerImpl(context, (() {
+      setState(() {});
+    }));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      const params = OverlayParams(height: 200, width: 250);
+      _slidingOverlayController.showSlidingOverlayFromTop(
+          Container(
+            height: params.height,
+            width: params.width,
+            color: Colors.red,
+          ),
+          overlayParams: params);
+    });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
 
   void _incrementCounter() {
     setState(() {
