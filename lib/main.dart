@@ -4,11 +4,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_params.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/typed_message.dart';
-import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/sliding_overlay_controller.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/top_message_notificator.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/controllers/top_message_notificator_impl.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/widgets/notification_message_widget.dart';
-import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/controllers/sliding_overlay_controller_impl.dart';
 
 void main() {
   runApp(const MyApp());
