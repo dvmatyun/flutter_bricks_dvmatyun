@@ -1,7 +1,14 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_params.dart';
-import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/sliding_overlay_controller.dart';
-import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/sliding_overlay_controller_impl.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/typed_message.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/sliding_overlay_controller.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/top_message_notificator.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/controllers/top_message_notificator_impl.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/widgets/notification_message_widget.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/controllers/sliding_overlay_controller_impl.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,16 +32,6 @@ class MyApp extends StatelessWidget {
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -43,75 +40,77 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-  late final ISlidingOverlayController _slidingOverlayController;
+  ITopMessageNotificator? _topMessageNotificator;
+
+  late final msgStream = Stream<String>.periodic(
+    const Duration(milliseconds: 1300),
+    ((i) => 'adasdas fsdfsdfsd fadfsdasd asddas das dasdasdasd asdasdas message $i'),
+  );
+  StreamSubscription? sub;
 
   @override
   void initState() {
     super.initState();
-    _slidingOverlayController = SlidingOverlayControllerImpl(context, (() {
-      setState(() {});
-    }));
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      const params = OverlayParams(height: 200, width: 250);
-      _slidingOverlayController.showSlidingOverlayFromTop(
-          Container(
-            height: params.height,
-            width: params.width,
-            color: Colors.red,
-          ),
-          overlayParams: params);
+      _topMessageNotificator = TopMessageNotificatorImpl(
+          overlayInsertFunc: (entry) => Overlay.of(context)?.insert(entry),
+          typedMessageBuilder: _typedMessageBuilder,
+          typedMessageStream: msgStream.map(_mapStringToTypedMsg));
     });
+  }
+
+  Widget _typedMessageBuilder(TypedMessage typedMessage) => NotificationMessageWidget(
+        child: Text(typedMessage.message),
+        onClose: () => _topMessageNotificator!.hideSlidingOverlay(key: typedMessage.overlayParams.key),
+      );
+
+  late final overlayParams = OverlayParams(
+    key: 'top-message-01',
+    screenHeight: MediaQuery.of(context).size.height,
+    screenWidth: MediaQuery.of(context).size.width,
+    overlayHeight: 60,
+    overlayWidth: min(MediaQuery.of(context).size.width / 2, 1000),
+    topOffset: 10,
+    animationDuration: const Duration(milliseconds: 1000),
+    overlayStayDuration: const Duration(milliseconds: 2000),
+  );
+
+  late final overlayParams2 = overlayParams.copyWith(
+    key: 'top-message-02',
+    topOffset: (overlayParams.topOffset * 2 + (overlayParams.overlayHeight ?? 0)),
+  );
+
+  TypedMessage _mapStringToTypedMsg(String message) {
+    if (_topMessageNotificator!.isOverlayIsShown(overlayParams.key!)) {
+      return TypedMessage(type: 'simple', message: message, overlayParams: overlayParams2);
+    }
+    return TypedMessage(type: 'simple', message: message, overlayParams: overlayParams);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    sub?.cancel();
+    _topMessageNotificator?.close();
     super.dispose();
   }
 
   void _incrementCounter() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
       _counter++;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             const Text(
