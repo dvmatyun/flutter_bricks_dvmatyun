@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_message.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_params.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/typed_message.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/top_message_notificator.dart';
@@ -34,11 +35,18 @@ class _MyHomePageState extends State<MyHomePage> {
       _topMessageNotificator = TopMessageNotificatorImpl(
           overlayInsertFunc: (entry) => Overlay.of(context)?.insert(entry),
           typedMessageBuilder: _typedMessageBuilder,
-          typedMessageStream: msgStream.map(_mapStringToTypedMsg));
+          typedMessageStream: msgStream.map(((event) {
+            final message = _mapStringToTypedMsg(event);
+            if (_topMessageNotificator!.isOverlayIsShown(overlayParams.key!)) {
+              return OverlayMessage(typedMessage: message, overlayParams: overlayParams2);
+            }
+            return OverlayMessage(typedMessage: message, overlayParams: overlayParams);
+            //_mapStringToTypedMsg
+          })));
     });
   }
 
-  Widget _typedMessageBuilder(TypedMessage typedMessage) => NotificationMessageWidget(
+  Widget _typedMessageBuilder(OverlayMessage typedMessage) => NotificationMessageWidget(
         child: Text(typedMessage.message),
         onClose: () => _topMessageNotificator!.hideSlidingOverlay(key: typedMessage.overlayParams.key),
       );
@@ -59,12 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
     topOffset: (overlayParams.topOffset * 2 + (overlayParams.overlayHeight ?? 0)),
   );
 
-  TypedMessage _mapStringToTypedMsg(String message) {
-    if (_topMessageNotificator!.isOverlayIsShown(overlayParams.key!)) {
-      return TypedMessage(type: 'simple', message: message, overlayParams: overlayParams2);
-    }
-    return TypedMessage(type: 'simple', message: message, overlayParams: overlayParams);
-  }
+  TypedMessage _mapStringToTypedMsg(String message) => TypedMessage(type: 'simple', message: message);
 
   @override
   void dispose() {

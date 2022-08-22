@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_message.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/overlay_params.dart';
-import 'package:flutter_bricks_dvmatyun/ui/overlay/common/models/typed_message.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/sliding_overlay_controller.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/domain/controllers/top_message_notificator.dart';
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/controllers/sliding_overlay_controller_impl.dart';
@@ -15,7 +15,7 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
 
   TopMessageNotificatorImpl({
     required OverlayInsertFunc overlayInsertFunc,
-    required Stream<TypedMessage> typedMessageStream,
+    required Stream<OverlayMessage> typedMessageStream,
     required TypedMessageBuilder typedMessageBuilder,
   })  : _slidingOverlayController = SlidingOverlayControllerImpl(overlayInsertFunc),
         _typedMessageBuilder = typedMessageBuilder {
@@ -40,7 +40,7 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
     return throttler;
   }
 
-  void _processTypedMessage(TypedMessage typedMessage) {
+  void _processTypedMessage(OverlayMessage typedMessage) {
     final throttler = _getThrottlerByOverlayKey(typedMessage.overlayParams);
     if (throttler == null) {
       return;
@@ -54,7 +54,7 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
     });
   }
 
-  void _showOverlay(TypedMessage typedMessage) {
+  void _showOverlay(OverlayMessage typedMessage) {
     _slidingOverlayController.showSlidingOverlayFromTop(
       child: _typedMessageBuilder(typedMessage),
       overlayParams: typedMessage.overlayParams,
