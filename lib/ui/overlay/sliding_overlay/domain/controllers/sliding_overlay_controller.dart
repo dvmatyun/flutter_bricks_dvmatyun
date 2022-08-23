@@ -11,6 +11,8 @@ abstract class ISlidingOverlayController {
   void hideSlidingOverlay({String? key});
   void immediateHideOverlay({String? key});
 
+  /// Map that shows whether entry is on the screen right now (value is true - on the screen)
+  Map<String, bool> get entriesStates;
   bool isOverlayIsShown(String key);
 
   void close();

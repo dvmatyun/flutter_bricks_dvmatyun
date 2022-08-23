@@ -10,7 +10,7 @@ import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/
 import 'package:flutter_bricks_dvmatyun/ui/overlay/sliding_overlay/presentation/widgets/notification_message_widget.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+  const MyHomePage({required this.title, Key? key}) : super(key: key);
   final String title;
 
   @override
@@ -23,7 +23,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late final msgStream = Stream<String>.periodic(
     const Duration(milliseconds: 1300),
-    ((i) => 'message $i'),
+    (i) => 'message $i',
   );
   StreamSubscription? sub;
 
@@ -35,20 +35,23 @@ class _MyHomePageState extends State<MyHomePage> {
       _topMessageNotificator = TopMessageNotificatorImpl(
           overlayInsertFunc: (entry) => Overlay.of(context)?.insert(entry),
           typedMessageBuilder: _typedMessageBuilder,
-          typedMessageStream: msgStream.map(((event) {
+          typedMessageStream: msgStream.map((event) {
             final message = _mapStringToTypedMsg(event);
             if (_topMessageNotificator!.isOverlayIsShown(overlayParams.key!)) {
               return OverlayMessage(typedMessage: message, overlayParams: overlayParams2);
             }
             return OverlayMessage(typedMessage: message, overlayParams: overlayParams);
             //_mapStringToTypedMsg
-          })));
+          }));
     });
   }
 
   Widget _typedMessageBuilder(OverlayMessage typedMessage) => NotificationMessageWidget(
-        child: Text(typedMessage.message),
         onClose: () => _topMessageNotificator!.hideSlidingOverlay(key: typedMessage.overlayParams.key),
+        decoration: const BoxDecoration(
+          color: Colors.black,
+        ),
+        child: Text(typedMessage.message),
       );
 
   late final overlayParams = OverlayParams(
@@ -64,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   late final overlayParams2 = overlayParams.copyWith(
     key: 'top-message-02',
-    topOffset: (overlayParams.topOffset * 2 + (overlayParams.overlayHeight ?? 0)),
+    topOffset: overlayParams.topOffset * 2 + (overlayParams.overlayHeight ?? 0),
   );
 
   TypedMessage _mapStringToTypedMsg(String message) => TypedMessage(type: 'simple', message: message);
@@ -83,32 +86,30 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
-  }
+        body: Center(
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const Text(
+                'You have pushed the button this many times:',
+              ),
+              Text(
+                '$_counter',
+                style: Theme.of(context).textTheme.headline4,
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _incrementCounter,
+          tooltip: 'Increment',
+          child: const Icon(Icons.add),
+        ), // This trailing comma makes auto-formatting nicer for build methods.
+      );
 }

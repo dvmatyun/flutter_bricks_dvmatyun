@@ -12,6 +12,9 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
   final _namedEntries = <String, OverlayEntry>{};
 
   final _entriesStates = <String, bool>{};
+  @override
+  Map<String, bool> get entriesStates => _entriesStates;
+
   final _entriesParams = <String, OverlayParams>{};
 
   final _commandsSc = StreamController<OverlayUiCommand>.broadcast();
@@ -27,13 +30,14 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
   @override
   void hideSlidingOverlay({String? key}) {
     if (key != null) {
+      final params = _entriesParams[key];
       _commandsSc.add(
         OverlayUiCommand(
           key: key,
           doOpen: true,
         ),
       );
-      final params = _entriesParams[key];
+
       if (params != null) {
         _commandsSc.add(
           OverlayUiCommand(

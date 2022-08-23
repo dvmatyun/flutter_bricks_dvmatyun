@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class NotificationMessageWidget extends StatelessWidget {
   const NotificationMessageWidget({
     required this.child,
+    required this.decoration,
     this.height,
     this.width,
     this.onClose,
@@ -14,6 +15,7 @@ class NotificationMessageWidget extends StatelessWidget {
   final double? width;
   final VoidCallback? onClose;
   final Widget child;
+  final BoxDecoration decoration;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -21,31 +23,36 @@ class NotificationMessageWidget extends StatelessWidget {
           height: height,
           width: width,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(16),
             child: Material(
-              color: Colors.amber,
-              borderRadius: BorderRadius.circular(16.0),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    child,
-                    onClose != null
-                        ? IconButton(
-                            //constraints: BoxConstraints.tight(const Size.square(24)),
-                            splashRadius: 24,
-                            padding: EdgeInsets.zero,
-                            onPressed: onClose,
-                            icon: const Icon(
-                              Icons.close,
-                              size: 24,
-                            ),
-                          )
-                        : const SizedBox(),
-                  ],
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: DecoratedBox(
+                decoration: decoration,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      child,
+                      if (onClose != null)
+                        IconButton(
+                          //constraints: BoxConstraints.tight(const Size.square(24)),
+                          splashRadius: 24,
+                          padding: EdgeInsets.zero,
+                          onPressed: onClose,
+                          icon: const Icon(
+                            Icons.close,
+                            size: 24,
+                            color: Colors.white,
+                          ),
+                        )
+                      else
+                        const SizedBox(),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -67,8 +67,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _typedMessageBuilder(OverlayMessage typedMessage) => NotificationMessageWidget(
-        child: Text(typedMessage.message),
         onClose: () => _topMessageNotificator!.hideSlidingOverlay(key: typedMessage.overlayParams.key),
+        decoration: const BoxDecoration(
+          color: Colors.black,
+        ),
+        child: Text(typedMessage.message),
       );
 
   late final overlayParams = OverlayParams(

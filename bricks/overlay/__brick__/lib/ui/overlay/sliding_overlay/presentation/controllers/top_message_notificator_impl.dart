@@ -1,13 +1,11 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:{{packageName.snakeCase()}}/ui/overlay/common/models/overlay_message.dart';
 import 'package:{{packageName.snakeCase()}}/ui/overlay/common/models/overlay_params.dart';
 import 'package:{{packageName.snakeCase()}}/ui/overlay/sliding_overlay/domain/controllers/sliding_overlay_controller.dart';
 import 'package:{{packageName.snakeCase()}}/ui/overlay/sliding_overlay/domain/controllers/top_message_notificator.dart';
 import 'package:{{packageName.snakeCase()}}/ui/overlay/sliding_overlay/presentation/controllers/sliding_overlay_controller_impl.dart';
 
-class TopMessageNotificatorImpl implements ITopMessageNotificator {
-  final ISlidingOverlayController _slidingOverlayController;
+class TopMessageNotificatorImpl extends SlidingOverlayControllerImpl implements ITopMessageNotificator {
   final TypedMessageBuilder _typedMessageBuilder;
   StreamSubscription? _subscription;
 
@@ -17,10 +15,10 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
     required OverlayInsertFunc overlayInsertFunc,
     required Stream<OverlayMessage> typedMessageStream,
     required TypedMessageBuilder typedMessageBuilder,
-  })  : _slidingOverlayController = SlidingOverlayControllerImpl(overlayInsertFunc),
-        _typedMessageBuilder = typedMessageBuilder {
+  })  : _typedMessageBuilder = typedMessageBuilder,
+        super(overlayInsertFunc) {
     /// Constructor:
-    _subscription = typedMessageStream.listen((event) => _processTypedMessage(event));
+    _subscription = typedMessageStream.listen(_processTypedMessage);
   }
 
   _Throttler? _getThrottlerByOverlayKey(OverlayParams overlayParams) {
@@ -49,13 +47,13 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
     throttler.run(() {
       _showOverlay(typedMessage);
       Future<void>.delayed(Duration(milliseconds: throttler.hideMs)).then((value) {
-        _slidingOverlayController.hideSlidingOverlay(key: typedMessage.overlayParams.key);
+        super.hideSlidingOverlay(key: typedMessage.overlayParams.key);
       });
     });
   }
 
   void _showOverlay(OverlayMessage typedMessage) {
-    _slidingOverlayController.showSlidingOverlayFromTop(
+    super.showSlidingOverlayFromTop(
       child: _typedMessageBuilder(typedMessage),
       overlayParams: typedMessage.overlayParams,
     );
@@ -64,21 +62,8 @@ class TopMessageNotificatorImpl implements ITopMessageNotificator {
   @override
   void close() {
     _subscription?.cancel();
-    _slidingOverlayController.close();
+    super.close();
   }
-
-  @override
-  void hideSlidingOverlay({String? key}) => _slidingOverlayController.hideSlidingOverlay(key: key);
-
-  @override
-  void immediateHideOverlay({String? key}) => _slidingOverlayController.immediateHideOverlay(key: key);
-
-  @override
-  void showSlidingOverlayFromTop({required Widget child, required OverlayParams overlayParams}) =>
-      _slidingOverlayController.showSlidingOverlayFromTop(child: child, overlayParams: overlayParams);
-
-  @override
-  bool isOverlayIsShown(String key) => _slidingOverlayController.isOverlayIsShown(key);
 }
 
 /// Prevents the callback from executing until [delayMs] has passed after previous run
