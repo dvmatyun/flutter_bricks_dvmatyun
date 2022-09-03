@@ -1,8 +1,7 @@
 enum SocketStatus {
   disconnected('disconnected'),
   connecting('connecting'),
-  connected('connected'),
-  error('error');
+  connected('connected');
 
   final String value;
   const SocketStatus(this.value);

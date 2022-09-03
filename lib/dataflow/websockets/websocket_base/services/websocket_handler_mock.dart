@@ -67,7 +67,6 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   final StreamController<String> _websocketInternalController = StreamController<String>.broadcast();
 
   /// Internal state parameters:
-  bool _isConnected = false;
   bool _disposed = false;
 
   WebsocketHandlerMock({
@@ -98,13 +97,13 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
 
       return false;
     } on Object catch (e) {
-      _notifySocketStatusInternal(SocketStatus.error, e.toString());
+      disconnect('Internal error: $e');
       return false;
     }
   }
 
   Future<bool> _connectionInitialize(String baseUrl) async {
-    if (_isConnected) {
+    if ([SocketStatus.connected, SocketStatus.connecting].contains(socketState.status)) {
       return false;
     }
     _notifySocketStatusInternal(SocketStatus.connecting, _connectingPhrase(baseUrl));
@@ -119,7 +118,6 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   Future<void> _connectionSuccessful() async {
-    _isConnected = true;
     _notifySocketStatusInternal(SocketStatus.connected, _connectedPhrase);
     _initSubscriptions();
   }
@@ -127,7 +125,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   Future<void> _connectionUnsuccessful() async {}
 
   Future<void> _initSubscriptions() async {
-    if (!_isConnected) {
+    if (socketState.status != SocketStatus.connected) {
       return disconnect('Connection with server was not established!');
     }
     await _listenMessagerFromServer();
@@ -146,8 +144,9 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
 
   Future<void> _listenMessagesToServer() async {
     await _toServerMessagesSub?.cancel();
-    _toServerMessagesSub =
-        outgoingMessagesStream.takeWhile((_) => _isConnected).listen(_addMessageToSocketOutgoingInternal);
+    _toServerMessagesSub = outgoingMessagesStream
+        .takeWhile((_) => socketState.status == SocketStatus.connected)
+        .listen(_addMessageToSocketOutgoingInternal);
   }
 
   ///
@@ -160,7 +159,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
     if (_disposed) {
       return;
     }
-    if (!_isConnected) {
+    if (socketState.status != SocketStatus.connected) {
       _debugEventNotificationInternal(SocketLogEventType.warning, 'Trying to send message when not connected!');
       return;
     }
@@ -243,7 +242,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   Future<void> _pingSocketState() async {
     while (!_disposed) {
       await Future<void>.delayed(const Duration(milliseconds: _pingIntervalMs));
-      if (!_isConnected) {
+      if (socketState.status != SocketStatus.connected) {
         continue;
       }
       _isConnectionAlivePing();
@@ -251,7 +250,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   void _isConnectionAlivePing() {
-    final msg = 'Ping socket. ${_isConnected ? "Connected." : "Disconnected."}';
+    final msg = 'Ping socket. ${socketState.status == SocketStatus.connected ? "Connected." : "Disconnected."}';
     _debugEventNotificationInternal(SocketLogEventType.ping, msg);
   }
 
@@ -260,10 +259,9 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   ///
   @override
   Future<void> disconnect(String reason) async {
-    if (!_isConnected) {
+    if (socketState.status == SocketStatus.disconnected) {
       return;
     }
-    _isConnected = false;
     _notifySocketStatusInternal(SocketStatus.disconnected, reason);
   }
 
@@ -275,7 +273,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
     _socketStateController.close();
     _websocketInternalController.close();
     _debugEventController.close();
-    if (_isConnected) {
+    if (socketState.status == SocketStatus.connected) {
       disconnect('Close called');
     }
     _disposed = true;
