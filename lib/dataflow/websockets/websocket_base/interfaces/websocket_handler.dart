@@ -1,28 +1,46 @@
 import 'dart:async';
 
-import '../models/socket_status_impl.dart';
+import '../services/websocket_handler_mock.dart';
 import '../services/websocket_handler_io.dart'
 
 // ignore: uri_does_not_exist
     if (dart.library.html) '../services/websocket_handler_html.dart';
-import 'message_to_server.dart';
-import 'socket_message.dart';
 
-abstract class WebSocketHandler {
+import 'message_processor.dart';
+import 'socket_log_event.dart';
+import 'socket_state.dart';
+
+///
+/// Basic websocket handler.
+/// [T] is type of incoming deserialized messages (that are received from server and deserialized)
+/// [Y] is type of outgoing messages (that will be sent to server by you)
+///
+abstract class IWebSocketHandler<T, Y> {
   Stream<String> get outgoingMessagesStream;
-  Stream<ISocketMessage<dynamic>> get incomingMessagesStream;
+  Stream<T> get incomingMessagesStream;
 
   /// 0 - not connected
   /// 1 - connecting
   /// 2 - connected
-  Stream<SocketStatus> get connectionStatusStream;
+  Stream<ISocketState> get socketStateStream;
+  ISocketState get socketState;
+
+  /// Produces a lot of debug events:
+  Stream<ISocketLogEvent> get logEventStream;
 
   Future<bool> connect();
   Future<void> disconnect(String reason);
 
-  void sendMessage(IMessageToServer messageToServer);
+  void sendMessage(Y messageToServer);
 
   void close();
 
-  factory WebSocketHandler.createClient(String connectUrlBase) => createWebsocketClient(connectUrlBase);
+  /// Creates real websocket client depending on running platform (io / html). Requires server.
+  factory IWebSocketHandler.createClient(String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
+      createWebsocketClient(connectUrlBase, messageProcessor);
+
+  /// Created NOT REAL websocket client, that responses with same message as you send to it.
+  factory IWebSocketHandler.createMockedWebsocketClient(
+          String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
+      createMockedWebsocketClient(connectUrlBase, messageProcessor);
 }

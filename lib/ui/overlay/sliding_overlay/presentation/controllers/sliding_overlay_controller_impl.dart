@@ -29,6 +29,9 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
 
   @override
   void hideSlidingOverlay({String? key}) {
+    if (_isDisposed) {
+      return;
+    }
     if (key != null) {
       final params = _entriesParams[key];
       _commandsSc.add(
@@ -37,7 +40,6 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
           doOpen: true,
         ),
       );
-
       if (params != null) {
         _commandsSc.add(
           OverlayUiCommand(
@@ -59,12 +61,18 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
 
   @override
   void immediateHideOverlay({String? key}) {
+    if (_isDisposed) {
+      return;
+    }
     if (key == null) {
       for (final oe in _anonymousEntries) {
         oe.remove();
       }
       _anonymousEntries.clear();
     } else {
+      if (!_namedEntries.containsKey(key)) {
+        return;
+      }
       final oe = _namedEntries.remove(key);
       _entriesStates[key] = false;
       oe?.remove();
@@ -115,14 +123,19 @@ class SlidingOverlayControllerImpl implements ISlidingOverlayController {
     }
   }
 
+  void _hideAllOverlays() {
+    hideSlidingOverlay();
+    final keys = _namedEntries.keys.toList(growable: false);
+    for (final key in keys) {
+      hideSlidingOverlay(key: key);
+    }
+  }
+
   @override
   void close() {
-    _commandsSc.close();
-    immediateHideOverlay();
-    for (final key in _namedEntries.keys) {
-      immediateHideOverlay(key: key);
-    }
+    _hideAllOverlays();
     _isDisposed = true;
+    _commandsSc.close();
   }
 
   @override

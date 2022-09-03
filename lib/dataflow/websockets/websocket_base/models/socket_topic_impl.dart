@@ -53,6 +53,9 @@ class SocketTopicImpl implements ISocketTopic {
 
   @override
   String get topic3 => pathSegments.length > 3 ? pathSegments[3] : '';
+
+  @override
+  String toString() => path;
 }
 
 ISocketTopic socketTopicFromJson(String fullPath) => SocketTopicImpl.path(fullPath: fullPath);

@@ -1,48 +1,59 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/enums/socket_status_type.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/message_to_server.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_message_impl.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_status_impl.dart';
+import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_state_impl.dart';
 
+import '../interfaces/message_processor.dart';
+import '../interfaces/socket_log_event.dart';
+import '../interfaces/socket_state.dart';
 import '../interfaces/websocket_handler.dart';
 
-WebSocketHandler createWebsocketClient(String connectUrlBase) => WebsocketHandlerIo(connectUrlBase: connectUrlBase);
+IWebSocketHandler<T, Y> createWebsocketClient<T, Y>(String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
+    WebsocketHandlerIo<T, Y>(connectUrlBase: connectUrlBase, messageProcessor: messageProcessor);
 
-class WebsocketHandlerIo implements WebSocketHandler {
-  static const String _logName = '[WebSocket IO]';
+class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
   final String _connectUrlBase;
 
   final StreamController<String> _outgoingMessagesController = StreamController<String>.broadcast();
   @override
-  late final Stream<String> outgoingMessagesStream = _outgoingMessagesController.stream;
+  Stream<String> get outgoingMessagesStream => _outgoingMessagesController.stream;
 
   /// 0 - not connected
   /// 1 - connecting
   /// 2 - connected
-  final StreamController<SocketStatus> _connectionStatusController = StreamController<SocketStatus>.broadcast();
+  final StreamController<ISocketState> _socketStateController = StreamController<ISocketState>.broadcast();
   @override
-  late final Stream<SocketStatus> connectionStatusStream = _connectionStatusController.stream;
+  Stream<ISocketState> get socketStateStream => _socketStateController.stream;
 
-  final StreamController<SocketMessageImpl> _incomingMessagesController =
-      StreamController<SocketMessageImpl>.broadcast();
-
+  ISocketState _socketState = SocketStateImpl(status: SocketStatus.disconnected, message: 'Created');
   @override
-  late final Stream<SocketMessageImpl> incomingMessagesStream;
+  ISocketState get socketState => _socketState;
+
+  final _debugEventController = StreamController<ISocketLogEvent>.broadcast();
+  @override
+  Stream<ISocketLogEvent> get logEventStream => _debugEventController.stream;
+
+  final StreamController<T> _incomingMessagesController = StreamController<T>.broadcast();
+  @override
+  Stream<T> get incomingMessagesStream => _incomingMessagesController.stream;
 
   bool _isConnected = false;
   bool _disposed = false;
-  final onCloseScInternal = StreamController<String>.broadcast();
+  final _onCloseScInternal = StreamController<String>.broadcast();
   StreamSubscription? _subClose;
   StreamSubscription? _subInMessage;
 
   io.WebSocket? _webSocket;
 
-  WebsocketHandlerIo({required String connectUrlBase}) : _connectUrlBase = connectUrlBase {
-    incomingMessagesStream = _incomingMessagesController.stream;
-    _pingSocketStatus();
+  final IMessageProcessor<T, Y> _messageProcessor;
+
+  WebsocketHandlerIo({
+    required String connectUrlBase,
+    required IMessageProcessor<T, Y> messageProcessor,
+  })  : _connectUrlBase = connectUrlBase,
+        _messageProcessor = messageProcessor {
+    _pingSocketState();
   }
 
   @override
@@ -52,8 +63,9 @@ class WebsocketHandlerIo implements WebSocketHandler {
     _subClose?.cancel();
     _outgoingMessagesController.close();
     _incomingMessagesController.close();
-    _connectionStatusController.close();
-    onCloseScInternal.close();
+    _socketStateController.close();
+    _onCloseScInternal.close();
+    _debugEventController.close();
     if (_webSocket?.readyState == 1) {
       _webSocket?.close(3001, 'Requested by user!');
     }
@@ -66,30 +78,29 @@ class WebsocketHandlerIo implements WebSocketHandler {
     }
     //l.v('$_logName disconnect!!!  Reason: $reason');
     _isConnected = false;
-    onCloseScInternal.add(_webSocket?.closeReason ?? 'unknown');
+    _onCloseScInternal.add(_webSocket?.closeReason ?? 'unknown');
     await _closeSubscriptions();
     if (_webSocket?.readyState == 1) {
       await _webSocket?.close(3001, 'Requested by user!');
     }
-    if (!_connectionStatusController.isClosed) {
-      _connectionStatusController
-          .add(SocketStatus(statusType: SocketStatusType.disconnected, status: 'Manual disconnect!'));
+    if (!_socketStateController.isClosed) {
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: 'Manual disconnect!'));
     }
   }
 
   @override
-  void sendMessage(IMessageToServer messageToServer) {
+  void sendMessage(Y messageToServer) {
     if (_disposed) {
       return;
     }
     if (!_isConnected) {
       return;
     }
-    final outJsonMsg = jsonEncode(messageToServer.toJson());
+    final outJsonMsg = _messageProcessor.serializeMessage(messageToServer);
     _outgoingMessagesController.add(outJsonMsg);
   }
 
-  Future<void> _pingSocketStatus() async {
+  Future<void> _pingSocketState() async {
     while (!_disposed) {
       await Future<void>.delayed(const Duration(seconds: 1));
       if (!_isConnected) {
@@ -110,7 +121,7 @@ class WebsocketHandlerIo implements WebSocketHandler {
       throw Exception('Socket is already disposed!');
     }
     try {
-      _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.connecting, status: 'connecting...'));
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.connecting, message: 'connecting...'));
 
       var connectUrl = _connectUrlBase;
       if (io.Platform.isAndroid) {
@@ -121,8 +132,7 @@ class WebsocketHandlerIo implements WebSocketHandler {
       await Future<void>.delayed(const Duration(milliseconds: 100));
       if (_webSocket?.readyState != 1) {
         await _webSocket?.close();
-        _connectionStatusController
-            .add(SocketStatus(statusType: SocketStatusType.disconnected, status: 'failed to connect!'));
+        _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: 'failed to connect!'));
         return false;
       }
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -131,8 +141,7 @@ class WebsocketHandlerIo implements WebSocketHandler {
       _webSocket?.pingInterval = const Duration(seconds: 1);
 
       if (_webSocket?.closeCode != null) {
-        _connectionStatusController
-            .add(SocketStatus(statusType: SocketStatusType.disconnected, status: 'Connection failed!'));
+        _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: 'Connection failed!'));
         return false;
       }
 
@@ -142,23 +151,23 @@ class WebsocketHandlerIo implements WebSocketHandler {
 
       return true;
     } on Object catch (e) {
-      _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.disconnected, status: e.toString()));
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: e.toString()));
       return false;
     }
   }
 
   Future<void> _initSubscriptions() async {
     await _closeSubscriptions();
-    _subClose = onCloseScInternal.stream.listen((event) {
-      _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.disconnected, status: event));
+    _subClose = _onCloseScInternal.stream.listen((event) {
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: event));
     });
     _subInMessage = _webSocket?.listen((dynamic event) {
       final data = event as Object?;
-      if (data is! String) {
+      final msgFromServer = _messageProcessor.deserializeMessage(data);
+      if (msgFromServer == null) {
         return;
       }
-      final wsMessage = SocketMessageImpl.fromJson(jsonDecode(data) as Map<String, Object?>);
-      _incomingMessagesController.add(wsMessage);
+      _incomingMessagesController.add(msgFromServer);
     });
     _webSocket?.pingInterval = const Duration(seconds: 1);
     // ignore: unawaited_futures
@@ -187,8 +196,7 @@ class WebsocketHandlerIo implements WebSocketHandler {
           }
           if (input == _connectedPhrase) {
             _disposed = false;
-            _connectionStatusController
-                .add(SocketStatus(statusType: SocketStatusType.connected, status: _connectedPhrase));
+            _socketStateController.add(SocketStateImpl(status: SocketStatus.connected, message: _connectedPhrase));
           }
           _webSocket?.add(input);
           return true;

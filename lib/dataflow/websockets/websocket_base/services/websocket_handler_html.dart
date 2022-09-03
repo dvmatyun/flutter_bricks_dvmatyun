@@ -1,35 +1,43 @@
 import 'dart:async';
-import 'dart:convert';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 
+import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_state_impl.dart';
+
 import '../enums/socket_status_type.dart';
-import '../interfaces/message_to_server.dart';
+import '../interfaces/message_processor.dart';
+import '../interfaces/socket_log_event.dart';
+import '../interfaces/socket_state.dart';
 import '../interfaces/websocket_handler.dart';
-import '../models/socket_message_impl.dart';
-import '../models/socket_status_impl.dart';
 
-WebSocketHandler createWebsocketClient(String connectUrlBase) => WebsocketHandlerHtml(connectUrlBase: connectUrlBase);
+IWebSocketHandler<T, Y> createWebsocketClient<T, Y>(String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
+    WebsocketHandlerHtml<T, Y>(connectUrlBase: connectUrlBase, messageProcessor: messageProcessor);
 
-class WebsocketHandlerHtml implements WebSocketHandler {
+class WebsocketHandlerHtml<T, Y> implements IWebSocketHandler<T, Y> {
   final String _connectUrlBase;
 
   final StreamController<String> _outgoingMessagesController = StreamController<String>.broadcast();
   @override
-  late final Stream<String> outgoingMessagesStream = _outgoingMessagesController.stream;
+  Stream<String> get outgoingMessagesStream => _outgoingMessagesController.stream;
 
   /// 0 - not connected
   /// 1 - connecting
   /// 2 - connected
-  final StreamController<SocketStatus> _connectionStatusController = StreamController<SocketStatus>.broadcast();
+  final StreamController<ISocketState> _socketStateController = StreamController<ISocketState>.broadcast();
   @override
-  late final Stream<SocketStatus> connectionStatusStream = _connectionStatusController.stream;
+  Stream<ISocketState> get socketStateStream => _socketStateController.stream;
 
-  final StreamController<SocketMessageImpl> _incomingMessagesController =
-      StreamController<SocketMessageImpl>.broadcast();
-
+  ISocketState _socketState = SocketStateImpl(status: SocketStatus.disconnected, message: 'Created');
   @override
-  late final Stream<SocketMessageImpl> incomingMessagesStream;
+  ISocketState get socketState => _socketState;
+
+  final _debugEventController = StreamController<ISocketLogEvent>.broadcast();
+  @override
+  Stream<ISocketLogEvent> get logEventStream => _debugEventController.stream;
+
+  final StreamController<T> _incomingMessagesController = StreamController<T>.broadcast();
+  @override
+  Stream<T> get incomingMessagesStream => _incomingMessagesController.stream;
 
   bool _isConnected = false;
   bool _isDisposed = false;
@@ -39,14 +47,16 @@ class WebsocketHandlerHtml implements WebSocketHandler {
   StreamSubscription? _subInMessage;
 
   html.WebSocket? _webSocket;
+  final IMessageProcessor<T, Y> _messageProcessor;
 
-  WebsocketHandlerHtml({required String connectUrlBase}) : _connectUrlBase = connectUrlBase {
-    incomingMessagesStream = _incomingMessagesController.stream;
-  }
+  WebsocketHandlerHtml({
+    required String connectUrlBase,
+    required IMessageProcessor<T, Y> messageProcessor,
+  })  : _connectUrlBase = connectUrlBase,
+        _messageProcessor = messageProcessor;
 
   @override
   void close() {
-    _isDisposed = true;
     disconnect('[called close()]');
     _subInMessage?.cancel();
     _subClose?.cancel();
@@ -54,7 +64,9 @@ class WebsocketHandlerHtml implements WebSocketHandler {
     _subError?.cancel();
     _outgoingMessagesController.close();
     _incomingMessagesController.close();
-    _connectionStatusController.close();
+    _socketStateController.close();
+    _debugEventController.close();
+    _isDisposed = true;
   }
 
   static const String traceName = '[WebSocket HTML] ';
@@ -69,22 +81,21 @@ class WebsocketHandlerHtml implements WebSocketHandler {
     if (_webSocket?.readyState == 1) {
       _webSocket?.close(3001, 'Requested by user!');
     }
-    if (!_connectionStatusController.isClosed) {
-      _connectionStatusController
-          .add(SocketStatus(statusType: SocketStatusType.disconnected, status: 'Manual disconnect!'));
+    if (!_socketStateController.isClosed) {
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: 'Manual disconnect!'));
     }
     //l.v('$traceName disconnect end!');
   }
 
   @override
-  void sendMessage(IMessageToServer messageToServer) {
+  void sendMessage(Y messageToServer) {
     if (_isDisposed) {
       throw Exception('Socket is already disposed!');
     }
     if (!_isConnected) {
       return;
     }
-    final outJsonMsg = jsonEncode(messageToServer.toJson());
+    final outJsonMsg = _messageProcessor.serializeMessage(messageToServer);
     _outgoingMessagesController.add(outJsonMsg);
   }
 
@@ -94,7 +105,7 @@ class WebsocketHandlerHtml implements WebSocketHandler {
       throw Exception('Socket is already disposed!');
     }
     try {
-      _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.connecting, status: 'connecting...'));
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.connecting, message: 'connecting...'));
       //final storedUser = AppUser(userName: username, loginStoredToken: loginToken);
       final connectUrl = _connectUrlBase;
       _webSocket = html.WebSocket(connectUrl);
@@ -104,16 +115,15 @@ class WebsocketHandlerHtml implements WebSocketHandler {
       for (var i = 0; i < (timeoutMs ~/ pingEvery); i++) {
         await Future<void>.delayed(const Duration(milliseconds: pingEvery));
         if (_isConnected) {
-          _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.connected, status: 'connected!'));
+          _socketStateController.add(SocketStateImpl(status: SocketStatus.connected, message: 'connected!'));
           return true;
         }
       }
       _webSocket?.close(3001, 'Requested by user.');
-      _connectionStatusController
-          .add(SocketStatus(statusType: SocketStatusType.disconnected, status: 'failed to connect!'));
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: 'failed to connect!'));
       return false;
     } on Object catch (e) {
-      _connectionStatusController.add(SocketStatus(statusType: SocketStatusType.disconnected, status: e.toString()));
+      _socketStateController.add(SocketStateImpl(status: SocketStatus.disconnected, message: e.toString()));
       return false;
     }
   }
@@ -136,12 +146,12 @@ class WebsocketHandlerHtml implements WebSocketHandler {
 
     _subInMessage = _webSocket!.onMessage.listen((dynamic event) {
       final data = event.data as Object?;
-      if (data is! String) {
+      final msgFromServer = _messageProcessor.deserializeMessage(data);
+      if (msgFromServer == null) {
         return;
       }
       //l.v('$traceName as [at minute : ${DateTime.now().minute}:${DateTime.now().second}] ${data.toString()}'.substring(0, 50));
-
-      _incomingMessagesController.add(SocketMessageImpl.fromJson(jsonDecode(data) as Map<String, Object?>));
+      _incomingMessagesController.add(msgFromServer);
     });
   }
 
