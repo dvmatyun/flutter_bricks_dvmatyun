@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bricks_dvmatyun/feature/sliding_notification/presentation/sliding_notification_page.dart';
 import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_mocked_page.dart';
+import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_platform_page.dart';
 
 /// HomePage
 class HomePage extends StatefulWidget {
@@ -72,9 +73,15 @@ class _HomePageState extends State<HomePage> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).push(WebsocketBaseMockedPagePage.getRoute());
+                  Navigator.of(context).push(WebsocketBaseMockedPage.getRoute());
                 },
                 child: const Text('To websocket mocked page'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(WebsocketBasePlatformPage.getRoute());
+                },
+                child: const Text('To websocket platform page'),
               ),
             ],
           ),

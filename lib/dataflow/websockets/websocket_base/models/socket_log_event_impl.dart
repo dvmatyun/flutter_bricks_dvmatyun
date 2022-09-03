@@ -11,9 +11,13 @@ class SocketLogEventImpl extends SocketStateImpl implements ISocketLogEvent {
   @override
   final String? data;
 
+  @override
+  final int pingMs;
+
   SocketLogEventImpl({
     required this.socketLogEventType,
     required SocketStatus status,
+    required this.pingMs,
     String message = '',
     this.data,
   }) : super(

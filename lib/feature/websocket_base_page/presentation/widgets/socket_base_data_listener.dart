@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/enums/socket_log_event_type.dart';
 import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/message_to_server.dart';
 import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/socket_log_event.dart';
 import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/socket_message.dart';
@@ -33,6 +34,9 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
   }
 
   void _listenToDebugEvents(ISocketLogEvent state) {
+    if (state.socketLogEventType == SocketLogEventType.ping) {
+      //!return;
+    }
     setState(() {
       _addDebugEvent(state);
     });
@@ -94,7 +98,7 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
                 child: Padding(
                   padding: const EdgeInsets.all(2),
                   child: SizedBox(
-                    height: 52,
+                    height: 62,
                     child: ColoredBox(
                       color: Colors.black12,
                       child: Row(
@@ -102,7 +106,7 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(2),
+                            padding: const EdgeInsets.all(6),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -111,7 +115,7 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 SizedBox(
-                                  width: (MediaQuery.of(context).size.width - 80),
+                                  width: (MediaQuery.of(context).size.width - 90),
                                   child: Text(
                                     processSubtitle(_debugEvents[index]),
                                     style: const TextStyle(fontSize: 8),
@@ -143,8 +147,8 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
     if (event.data != null) {
       sb.write(' / data=[${_shortenString(event.data)}]');
     }
-    sb.write('\n at ${timeNumberToStr(event.time.minute)}:${timeNumberToStr(event.time.second)}');
-
+    sb.write('\n at ${timeNumberToStr(event.time.minute)}:${timeNumberToStr(event.time.second)}.');
+    sb.write(' Ping=${event.pingMs} ms.');
     return sb.toString();
   }
 

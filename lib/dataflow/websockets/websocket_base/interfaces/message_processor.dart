@@ -1,4 +1,10 @@
 abstract class IMessageProcessor<T, Y> {
   T? deserializeMessage(Object? data);
-  String serializeMessage(Y message);
+  Object serializeMessage(Y message);
+
+  /// Sending ping message to server:
+  Object get pingServerMessage;
+
+  /// Receiving pong message from server:
+  bool isPongMessageReceived(T? data);
 }

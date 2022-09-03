@@ -24,11 +24,14 @@ class SocketCurrentStatus extends StatelessWidget {
             );
           }
           final data = state.data;
-          return Column(
-            children: [
-              Text('status: ${data?.status.value}'),
-              Text('status message: ${data?.message}'),
-            ],
+          return Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                Text('status: ${data?.status.value}'),
+                Text('status message: ${data?.message}'),
+              ],
+            ),
           );
         },
       );

@@ -16,7 +16,9 @@ import 'socket_state.dart';
 /// [Y] is type of outgoing messages (that will be sent to server by you)
 ///
 abstract class IWebSocketHandler<T, Y> {
-  Stream<String> get outgoingMessagesStream;
+  int get pingDelayMs;
+
+  Stream<Object> get outgoingMessagesStream;
   Stream<T> get incomingMessagesStream;
 
   /// 0 - not connected
@@ -36,11 +38,27 @@ abstract class IWebSocketHandler<T, Y> {
   void close();
 
   /// Creates real websocket client depending on running platform (io / html). Requires server.
-  factory IWebSocketHandler.createClient(String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
-      createWebsocketClient(connectUrlBase, messageProcessor);
+  /// [connectUrlBase] should look like [ws://127.0.0.1:42627/websocket]
+  factory IWebSocketHandler.createClient(
+    String connectUrlBase,
+    IMessageProcessor<T, Y> messageProcessor, {
+    int timeoutConnectionMs = 5000,
+    int pingIntervalMs = 1000,
+  }) =>
+      createWebsocketClient(
+        connectUrlBase,
+        messageProcessor,
+        timeoutConnectionMs: timeoutConnectionMs,
+        pingIntervalMs: pingIntervalMs,
+      );
 
   /// Created NOT REAL websocket client, that responses with same message as you send to it.
   factory IWebSocketHandler.createMockedWebsocketClient(
-          String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
-      createMockedWebsocketClient(connectUrlBase, messageProcessor);
+    String connectUrlBase,
+    IMessageProcessor<T, Y> messageProcessor,
+  ) =>
+      createMockedWebsocketClient(
+        connectUrlBase,
+        messageProcessor,
+      );
 }

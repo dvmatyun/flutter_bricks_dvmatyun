@@ -17,5 +17,19 @@ class SocketMessageProcessor implements IMessageProcessor<ISocketMessage<dynamic
   }
 
   @override
-  String serializeMessage(IMessageToServer message) => jsonEncode(message.toJson());
+  Object serializeMessage(IMessageToServer message) => jsonEncode(message.toJson());
+
+  @override
+  Object get pingServerMessage => 'ping';
+
+  @override
+  bool isPongMessageReceived(ISocketMessage? data) {
+    if (data == null) {
+      return false;
+    }
+    if (data.topic.host == "pong") {
+      return true;
+    }
+    return false;
+  }
 }

@@ -10,15 +10,23 @@ import '../interfaces/socket_log_event.dart';
 import '../interfaces/socket_state.dart';
 import '../interfaces/websocket_handler.dart';
 
-IWebSocketHandler<T, Y> createWebsocketClient<T, Y>(String connectUrlBase, IMessageProcessor<T, Y> messageProcessor) =>
+IWebSocketHandler<T, Y> createWebsocketClient<T, Y>(
+  String connectUrlBase,
+  IMessageProcessor<T, Y> messageProcessor, {
+  int timeoutConnectionMs = 5000,
+  int pingIntervalMs = 1000,
+}) =>
     WebsocketHandlerHtml<T, Y>(connectUrlBase: connectUrlBase, messageProcessor: messageProcessor);
 
 class WebsocketHandlerHtml<T, Y> implements IWebSocketHandler<T, Y> {
   final String _connectUrlBase;
 
-  final StreamController<String> _outgoingMessagesController = StreamController<String>.broadcast();
+  final _outgoingMessagesController = StreamController<Object>.broadcast();
   @override
-  Stream<String> get outgoingMessagesStream => _outgoingMessagesController.stream;
+  Stream<Object> get outgoingMessagesStream => _outgoingMessagesController.stream;
+
+  @override
+  int get pingDelayMs => 100;
 
   /// 0 - not connected
   /// 1 - connecting
@@ -173,6 +181,7 @@ class WebsocketHandlerHtml<T, Y> implements IWebSocketHandler<T, Y> {
     }
 
     //l.v("Подключение установлено.\nВведите сообщение или '$_cancelHandler' для выхода.");
+    /*
     await outgoingMessagesStream
         .takeWhile((String input) {
           if (input.trim().toLowerCase() == _cancelHandler || !_isConnected) {
@@ -184,6 +193,7 @@ class WebsocketHandlerHtml<T, Y> implements IWebSocketHandler<T, Y> {
         })
         .drain<void>()
         .whenComplete(() => disconnect('[_socketHandler ended]'));
+        */
     //l.v('Подключение закончено.');
   }
 

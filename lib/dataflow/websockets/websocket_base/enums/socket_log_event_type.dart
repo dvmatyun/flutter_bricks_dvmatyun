@@ -2,6 +2,7 @@ enum SocketLogEventType {
   error('error'),
   warning('warning'),
   ping('ping'),
+  pong('pong'),
   socketStateChanged('socketStateChanged'),
   toServerMessage('toServerMessage'),
   fromServerMessage('fromServerMessage');

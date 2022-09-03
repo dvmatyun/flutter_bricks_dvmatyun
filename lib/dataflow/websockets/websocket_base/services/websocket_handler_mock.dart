@@ -28,13 +28,16 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
 
   final String _connectUrlBase;
 
+  @override
+  int get pingDelayMs => 100;
+
   /// Serializer:
   final IMessageProcessor<T, Y> _messageProcessor;
 
   /// Messages TO server
-  final _outgoingMessagesController = StreamController<String>.broadcast();
+  final _outgoingMessagesController = StreamController<Object>.broadcast();
   @override
-  Stream<String> get outgoingMessagesStream => _outgoingMessagesController.stream;
+  Stream<Object> get outgoingMessagesStream => _outgoingMessagesController.stream;
   StreamSubscription? _toServerMessagesSub;
 
   /// Messages FROM server:
@@ -170,11 +173,11 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   /// Sending to server platform implementation:
-  void _addMessageToSocketOutgoingInternal(String input) {
+  void _addMessageToSocketOutgoingInternal(Object input) {
     try {
       /// Platform implementation here
-      _debugEventNotificationInternal(SocketLogEventType.toServerMessage, 'to server', data: input);
-      _websocketInternalController.add(input);
+      _debugEventNotificationInternal(SocketLogEventType.toServerMessage, 'to server', data: input.toString());
+      _websocketInternalController.add(input.toString());
     } on Object catch (e) {
       _debugEventNotificationInternal(
         SocketLogEventType.error,
@@ -235,6 +238,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
       socketLogEventType: type,
       status: _socketState.status,
       message: message,
+      pingMs: pingDelayMs,
       data: data,
     ));
   }
@@ -273,7 +277,7 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
     _socketStateController.close();
     _websocketInternalController.close();
     _debugEventController.close();
-    if (socketState.status == SocketStatus.connected) {
+    if (socketState.status != SocketStatus.disconnected) {
       disconnect('Close called');
     }
     _disposed = true;

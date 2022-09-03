@@ -7,15 +7,15 @@ import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/servi
 
 import 'websocket_base_screen.dart';
 
-/// WebsocketBaseMockedPage
-class WebsocketBaseMockedPage extends StatefulWidget {
-  const WebsocketBaseMockedPage({
+/// WebsocketBasePlatformPage
+class WebsocketBasePlatformPage extends StatefulWidget {
+  const WebsocketBasePlatformPage({
     Key? key,
   }) : super(key: key);
 
   static PageRoute getRoute() => PageRouteBuilder(
-        pageBuilder: (_, a1, a2) => const WebsocketBaseMockedPage(),
-        settings: const RouteSettings(name: '/websocket-base-mocked'),
+        pageBuilder: (_, a1, a2) => const WebsocketBasePlatformPage(),
+        settings: const RouteSettings(name: '/websocket-base-platform'),
         barrierColor: Colors.teal,
         transitionsBuilder: (context, a1, a2, child) {
           return FadeTransition(
@@ -26,11 +26,11 @@ class WebsocketBaseMockedPage extends StatefulWidget {
       );
 
   @override
-  State<WebsocketBaseMockedPage> createState() => _WebsocketBaseMockedPageState();
-} // WebsocketBaseMockedPage
+  State<WebsocketBasePlatformPage> createState() => _WebsocketBasePlatformPageState();
+} // WebsocketBasePlatformPage
 
-/// State for widget WebsocketBaseMockedPage
-class _WebsocketBaseMockedPageState extends State<WebsocketBaseMockedPage> {
+/// State for widget WebsocketBasePlatformPage
+class _WebsocketBasePlatformPageState extends State<WebsocketBasePlatformPage> {
   late final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> _socketHandler;
 
   /* #region Lifecycle */
@@ -38,11 +38,11 @@ class _WebsocketBaseMockedPageState extends State<WebsocketBaseMockedPage> {
   void initState() {
     super.initState();
     IMessageProcessor<ISocketMessage<dynamic>, IMessageToServer> messageProcessor = SocketMessageProcessor();
-    _socketHandler = IWebSocketHandler.createMockedWebsocketClient('mocked-url.com', messageProcessor);
+    _socketHandler = IWebSocketHandler.createClient('ws://127.0.0.1:42627/websocket', messageProcessor);
   }
 
   @override
-  void didUpdateWidget(WebsocketBaseMockedPage oldWidget) {
+  void didUpdateWidget(WebsocketBasePlatformPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Конфигурация виджета изменилась
   }
@@ -64,10 +64,10 @@ class _WebsocketBaseMockedPageState extends State<WebsocketBaseMockedPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('WebSocket base MOCKED'),
+          title: const Text('WebSocket base PLATFORM'),
         ),
         body: WebsocketBaseMockedScreen(
           socketHandler: _socketHandler,
         ),
       );
-} // _WebsocketBaseMockedPageState
+} // _WebsocketBasePlatformPageState
