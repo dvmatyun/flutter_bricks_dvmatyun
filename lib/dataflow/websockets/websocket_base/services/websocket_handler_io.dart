@@ -86,9 +86,7 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
   })  : _connectUrlBase = connectUrlBase,
         _messageProcessor = messageProcessor,
         _timeoutConnectionMs = timeoutConnectionMs,
-        _pingIntervalMs = pingIntervalMs {
-    _pingSocketState();
-  }
+        _pingIntervalMs = pingIntervalMs;
 
   ///
   /// NOT CONNECTED
@@ -101,6 +99,14 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
       throw Exception('Socket is already disposed!');
     }
     try {
+      if (socketState.status == SocketStatus.connected) {
+        if (_checkPlatformIsConnected('connect method')) {
+          return true;
+        } else {
+          disconnect('connection appears to be broken. Connecting again.');
+        }
+      }
+
       _startPingMeasurement();
       final isConnected = await _connectionInitialize(_connectUrlBase);
       _setInitPing();
@@ -111,7 +117,7 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
       await _connectionUnsuccessful();
 
       return false;
-    } on TimeoutException catch (e) {
+    } on TimeoutException catch (_) {
       disconnect('Connection to [$_connectUrlBase] failed by timeout $_timeoutConnectionMs ms!');
       return false;
     } on Object catch (e) {
@@ -147,9 +153,12 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
     }
     await _listenMessagerFromServer();
     await _listenMessagesToServer();
+    _pingSocketState();
   }
 
-  Future<void> _connectionUnsuccessful() async {}
+  Future<void> _connectionUnsuccessful() async {
+    disconnect('Connection unsuccessful');
+  }
 
   ///
   /// CONNECTED
@@ -277,11 +286,11 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   Future<void> _pingSocketState() async {
-    while (!_disposed) {
+    while (socketState.status == SocketStatus.connected) {
       try {
         await Future<void>.delayed(Duration(milliseconds: _pingIntervalMs));
         if (socketState.status != SocketStatus.connected) {
-          continue;
+          return;
         }
         _isConnectionAlivePing();
       } on Object catch (e) {
@@ -296,21 +305,21 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
   bool _checkPlatformIsConnected(String whoChecks) {
     if (_webSocket == null) {
       _debugEventNotificationInternal(
-        SocketLogEventType.error,
+        SocketLogEventType.ping,
         '$whoChecks : _webSocket object is NULL!',
       );
       return false;
     }
     if (_webSocket?.readyState != 1) {
       _debugEventNotificationInternal(
-        SocketLogEventType.error,
+        SocketLogEventType.ping,
         '$whoChecks : _webSocket readyState != 1 !!! $platformStaus',
       );
       return false;
     }
     if (_webSocket?.closeCode != null) {
       _debugEventNotificationInternal(
-        SocketLogEventType.error,
+        SocketLogEventType.ping,
         '$whoChecks : _webSocket closeCode is not NULL! $platformStaus',
       );
       return false;
@@ -319,10 +328,11 @@ class WebsocketHandlerIo<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   void _isConnectionAlivePing({String? message}) {
-    _addMessageToSocketOutgoingInternal(_messageProcessor.pingServerMessage, isPing: true);
-    final msg = 'Ping socket. Status: ${socketState.status.value}.';
-    _debugEventNotificationInternal(SocketLogEventType.ping, message == null ? msg : '$msg ($message)');
-    if (!_checkPlatformIsConnected('Ping socket.')) {
+    if (_checkPlatformIsConnected('Ping socket.')) {
+      _addMessageToSocketOutgoingInternal(_messageProcessor.pingServerMessage, isPing: true);
+      final msg = 'Ping socket. Status: ${socketState.status.value}.';
+      _debugEventNotificationInternal(SocketLogEventType.ping, message == null ? msg : '$msg ($message)');
+    } else {
       disconnect('Connection appeared to be closed during pinging websocket platform status!');
     }
   }

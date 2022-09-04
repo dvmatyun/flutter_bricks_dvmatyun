@@ -112,13 +112,13 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
                               children: [
                                 Text(
                                   '${_debugEvents[index].socketLogEventType.value} (${_debugEvents[index].status.value})',
-                                  style: const TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 16),
                                 ),
                                 SizedBox(
                                   width: (MediaQuery.of(context).size.width - 90),
                                   child: Text(
                                     processSubtitle(_debugEvents[index]),
-                                    style: const TextStyle(fontSize: 8),
+                                    style: const TextStyle(fontSize: 12),
                                   ),
                                 ),
                               ],
