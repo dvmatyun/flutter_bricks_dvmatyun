@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../websocket_universal.dart';
 
-/// SocketCurrentStatus
-class SocketCurrentStatus extends StatelessWidget {
-  const SocketCurrentStatus({
+/// SocketBytesCurrentStatus
+class SocketBytesCurrentStatus extends StatelessWidget {
+  const SocketBytesCurrentStatus({
     required this.socketHandler,
     Key? key,
   }) : super(key: key);
 
-  final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> socketHandler;
+  final IWebSocketHandler<List<int>, List<int>> socketHandler;
 
   @override
   Widget build(BuildContext context) => StreamBuilder<ISocketState>(
@@ -32,4 +32,4 @@ class SocketCurrentStatus extends StatelessWidget {
           );
         },
       );
-} // SocketCurrentStatus
+} // SocketBytesCurrentStatus

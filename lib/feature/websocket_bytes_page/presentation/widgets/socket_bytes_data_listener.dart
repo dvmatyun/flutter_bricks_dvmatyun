@@ -2,22 +2,22 @@ import 'package:flutter/material.dart';
 
 import '../../../../websocket_universal.dart';
 
-/// SocketBaseDataListener
-class SocketBaseDataListener extends StatefulWidget {
-  const SocketBaseDataListener({
+/// SocketBytesDataListener
+class SocketBytesDataListener extends StatefulWidget {
+  const SocketBytesDataListener({
     required this.socketHandler,
     Key? key,
   }) : super(key: key);
 
-  final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> socketHandler;
+  final IWebSocketHandler<List<int>, List<int>> socketHandler;
 
   @override
-  State<SocketBaseDataListener> createState() => _SocketBaseDataListenerState();
-} // SocketBaseDataListener
+  State<SocketBytesDataListener> createState() => _SocketBytesDataListenerState();
+} // SocketBytesDataListener
 
-/// State for widget SocketBaseDataListener
-class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
-  IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> get socketHandler => widget.socketHandler;
+/// State for widget SocketBytesDataListener
+class _SocketBytesDataListenerState extends State<SocketBytesDataListener> {
+  IWebSocketHandler<List<int>, List<int>> get socketHandler => widget.socketHandler;
   final GlobalKey<AnimatedListState> _listKey = GlobalKey();
 
   final _debugEvents = <ISocketLogEvent>[];
@@ -63,7 +63,7 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
   }
 
   @override
-  void didUpdateWidget(SocketBaseDataListener oldWidget) {
+  void didUpdateWidget(SocketBytesDataListener oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Конфигурация виджета изменилась
   }
@@ -166,4 +166,4 @@ class _SocketBaseDataListenerState extends State<SocketBaseDataListener> {
     }
     return data.substring(0, symbols);
   }
-} // _SocketBaseDataListenerState
+} // _SocketBytesDataListenerState

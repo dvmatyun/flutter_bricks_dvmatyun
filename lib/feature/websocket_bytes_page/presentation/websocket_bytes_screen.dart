@@ -1,26 +1,25 @@
 import 'package:flutter/material.dart';
 import '../../../../websocket_universal.dart';
-
-import 'widgets/socket_base_data_listener.dart';
-import 'widgets/socket_basic_controls.dart';
-import 'widgets/socket_current_status.dart';
+import 'widgets/socket_bytes_controls.dart';
+import 'widgets/socket_bytes_current_status.dart';
+import 'widgets/socket_bytes_data_listener.dart';
 
 /// WebsocketBaseMockedScreen
-class WebsocketBaseScreen extends StatefulWidget {
-  const WebsocketBaseScreen({
+class WebsocketBytesScreen extends StatefulWidget {
+  const WebsocketBytesScreen({
     required this.socketHandler,
     Key? key,
   }) : super(key: key);
 
-  final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> socketHandler;
+  final IWebSocketHandler<List<int>, List<int>> socketHandler;
 
   @override
-  State<WebsocketBaseScreen> createState() => _WebsocketBaseScreenState();
+  State<WebsocketBytesScreen> createState() => _WebsocketBytesScreenState();
 } // WebsocketBaseMockedScreen
 
 /// State for widget WebsocketBaseMockedScreen
-class _WebsocketBaseScreenState extends State<WebsocketBaseScreen> {
-  IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> get socketHandler => widget.socketHandler;
+class _WebsocketBytesScreenState extends State<WebsocketBytesScreen> {
+  IWebSocketHandler<List<int>, List<int>> get socketHandler => widget.socketHandler;
   /* #region Lifecycle */
   @override
   void initState() {
@@ -29,7 +28,7 @@ class _WebsocketBaseScreenState extends State<WebsocketBaseScreen> {
   }
 
   @override
-  void didUpdateWidget(WebsocketBaseScreen oldWidget) {
+  void didUpdateWidget(WebsocketBytesScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Конфигурация виджета изменилась
   }
@@ -53,9 +52,9 @@ class _WebsocketBaseScreenState extends State<WebsocketBaseScreen> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SocketBaseDataListener(socketHandler: socketHandler),
-          SocketBasicControls(socketHandler: socketHandler),
-          SocketCurrentStatus(socketHandler: socketHandler),
+          SocketBytesDataListener(socketHandler: socketHandler),
+          SocketBytesControls(socketHandler: socketHandler),
+          SocketBytesCurrentStatus(socketHandler: socketHandler),
         ],
       );
 } // _WebsocketBaseMockedScreenState

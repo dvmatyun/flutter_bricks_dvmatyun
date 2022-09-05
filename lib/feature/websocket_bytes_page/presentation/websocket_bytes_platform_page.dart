@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../../../websocket_universal.dart';
+import 'websocket_bytes_screen.dart';
 
-import 'websocket_base_screen.dart';
-
-/// WebsocketBasePlatformPage
-class WebsocketBasePlatformPage extends StatefulWidget {
-  const WebsocketBasePlatformPage({
+/// WebsocketBytesPlatformPage
+class WebsocketBytesPlatformPage extends StatefulWidget {
+  const WebsocketBytesPlatformPage({
     Key? key,
   }) : super(key: key);
 
   static PageRoute getRoute() => PageRouteBuilder(
-        pageBuilder: (_, a1, a2) => const WebsocketBasePlatformPage(),
-        settings: const RouteSettings(name: '/websocket-base-platform'),
+        pageBuilder: (_, a1, a2) => const WebsocketBytesPlatformPage(),
+        settings: const RouteSettings(name: '/websocket-bytes-platform'),
         barrierColor: Colors.teal,
         transitionsBuilder: (context, a1, a2, child) {
           return FadeTransition(
@@ -22,29 +21,29 @@ class WebsocketBasePlatformPage extends StatefulWidget {
       );
 
   @override
-  State<WebsocketBasePlatformPage> createState() => _WebsocketBasePlatformPageState();
-} // WebsocketBasePlatformPage
+  State<WebsocketBytesPlatformPage> createState() => _WebsocketBytesPlatformPageState();
+} // WebsocketBytesPlatformPage
 
-/// State for widget WebsocketBasePlatformPage
-class _WebsocketBasePlatformPageState extends State<WebsocketBasePlatformPage> {
-  late final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> _socketHandler;
+/// State for widget WebsocketBytesPlatformPage
+class _WebsocketBytesPlatformPageState extends State<WebsocketBytesPlatformPage> {
+  late final IWebSocketHandler<List<int>, List<int>> _socketHandler;
 
   /* #region Lifecycle */
   @override
   void initState() {
     super.initState();
-    final IMessageProcessor<ISocketMessage<dynamic>, IMessageToServer> messageProcessor = SocketMessageProcessor();
+    final IMessageProcessor<List<int>, List<int>> messageProcessor = SocketSimpleBytesProcessor();
     //wss://ws.postman-echo.com/raw
     //ws://127.0.0.1:42627/websocket
     _socketHandler = IWebSocketHandler.createClient(
-      'wss://ws.postman-echo.com/raw',
+      'ws://127.0.0.1:42627/websocket',
       messageProcessor,
       skipPingMessages: false,
     );
   }
 
   @override
-  void didUpdateWidget(WebsocketBasePlatformPage oldWidget) {
+  void didUpdateWidget(WebsocketBytesPlatformPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Конфигурация виджета изменилась
   }
@@ -66,10 +65,10 @@ class _WebsocketBasePlatformPageState extends State<WebsocketBasePlatformPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('WebSocket base PLATFORM'),
+          title: const Text('WebSocket bytes PLATFORM'),
         ),
-        body: WebsocketBaseScreen(
+        body: WebsocketBytesScreen(
           socketHandler: _socketHandler,
         ),
       );
-} // _WebsocketBasePlatformPageState
+} // _WebsocketBytesPlatformPageState

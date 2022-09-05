@@ -22,6 +22,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      builder: (context, child) {
+        final window = WidgetsBinding.instance.window;
+        return MediaQuery(
+          data: MediaQueryData.fromWindow(window).copyWith(
+            textScaleFactor: window.textScaleFactor.clamp(0.75, 1),
+          ),
+          child: child!,
+        );
+      },
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

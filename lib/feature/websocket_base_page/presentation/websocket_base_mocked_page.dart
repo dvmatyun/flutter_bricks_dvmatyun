@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/message_processor.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/message_to_server.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/socket_message.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/websocket_handler.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/services/socket_message_processor.dart';
+import '../../../../websocket_universal.dart';
 
 import 'websocket_base_screen.dart';
 
@@ -66,7 +62,7 @@ class _WebsocketBaseMockedPageState extends State<WebsocketBaseMockedPage> {
         appBar: AppBar(
           title: const Text('WebSocket base MOCKED'),
         ),
-        body: WebsocketBaseMockedScreen(
+        body: WebsocketBaseScreen(
           socketHandler: _socketHandler,
         ),
       );

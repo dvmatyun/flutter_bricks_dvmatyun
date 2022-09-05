@@ -1,7 +1,7 @@
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/socket_state.dart';
-
 import '../enums/socket_status_type.dart';
+import '../interfaces/socket_state.dart';
 
+/// Websocket current state data implementation
 class SocketStateImpl implements ISocketState {
   @override
   final SocketStatus status;
@@ -11,5 +11,7 @@ class SocketStateImpl implements ISocketState {
   @override
   final DateTime time;
 
-  SocketStateImpl({required this.status, this.message = ''}) : time = DateTime.now();
+  /// Constructor
+  SocketStateImpl({required this.status, this.message = ''})
+      : time = DateTime.now();
 }

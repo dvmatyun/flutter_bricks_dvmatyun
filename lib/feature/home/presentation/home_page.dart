@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bricks_dvmatyun/feature/sliding_notification/presentation/sliding_notification_page.dart';
 import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_mocked_page.dart';
 import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_platform_page.dart';
+import 'package:flutter_bricks_dvmatyun/feature/websocket_bytes_page/presentation/websocket_bytes_platform_page.dart';
 
 /// HomePage
 class HomePage extends StatefulWidget {
@@ -82,6 +83,12 @@ class _HomePageState extends State<HomePage> {
                   Navigator.of(context).push(WebsocketBasePlatformPage.getRoute());
                 },
                 child: const Text('To websocket platform page'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(WebsocketBytesPlatformPage.getRoute());
+                },
+                child: const Text('To websocket Bytes platform page'),
               ),
             ],
           ),

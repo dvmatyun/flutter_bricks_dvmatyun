@@ -1,15 +1,15 @@
 import 'dart:async';
 
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/enums/socket_status_type.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/message_processor.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_state_impl.dart';
-
 import '../enums/socket_log_event_type.dart';
+import '../enums/socket_status_type.dart';
+import '../interfaces/message_processor.dart';
 import '../interfaces/socket_log_event.dart';
 import '../interfaces/socket_state.dart';
 import '../interfaces/websocket_handler.dart';
 import '../models/socket_log_event_impl.dart';
+import '../models/socket_state_impl.dart';
 
+/// Factory for mocked websocket
 IWebSocketHandler<T, Y> createMockedWebsocketClient<T, Y>(
   String connectUrlBase,
   IMessageProcessor<T, Y> messageProcessor,
@@ -19,6 +19,7 @@ IWebSocketHandler<T, Y> createMockedWebsocketClient<T, Y>(
       messageProcessor: messageProcessor,
     );
 
+/// Mock implementation for websocket
 class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   /// consts:
   static const int _pingIntervalMs = 10000;
@@ -37,7 +38,8 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   /// Messages TO server
   final _outgoingMessagesController = StreamController<Object>.broadcast();
   @override
-  Stream<Object> get outgoingMessagesStream => _outgoingMessagesController.stream;
+  Stream<Object> get outgoingMessagesStream =>
+      _outgoingMessagesController.stream;
   StreamSubscription? _toServerMessagesSub;
 
   /// Messages FROM server:
@@ -50,11 +52,13 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   /// 0 - not connected
   /// 1 - connecting
   /// 2 - connected
-  final StreamController<ISocketState> _socketStateController = StreamController<ISocketState>.broadcast();
+  final StreamController<ISocketState> _socketStateController =
+      StreamController<ISocketState>.broadcast();
   @override
   Stream<ISocketState> get socketStateStream => _socketStateController.stream;
 
-  ISocketState _socketState = SocketStateImpl(status: SocketStatus.disconnected, message: 'Created');
+  ISocketState _socketState =
+      SocketStateImpl(status: SocketStatus.disconnected, message: 'Created');
   @override
   ISocketState get socketState => _socketState;
 
@@ -63,15 +67,19 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   Stream<ISocketLogEvent> get logEventStream => _debugEventController.stream;
 
   /// Mock internal:
-  Stream<String> get _echoStreamInternal => _websocketInternalController.stream.asyncMap((event) async {
+  Stream<String> get _echoStreamInternal =>
+      _websocketInternalController.stream.asyncMap((event) async {
         await Future<void>.delayed(const Duration(milliseconds: _baseDelayMs));
         return event;
       });
-  final StreamController<String> _websocketInternalController = StreamController<String>.broadcast();
+  final StreamController<String> _websocketInternalController =
+      StreamController<String>.broadcast();
 
   /// Internal state parameters:
   bool _disposed = false;
 
+  /// [connectUrlBase] URL of websocket server. Example: 'ws://127.0.0.1:42627'
+  /// [messageProcessor] how to process incoming and outgoing messages
   WebsocketHandlerMock({
     required String connectUrlBase,
     required IMessageProcessor<T, Y> messageProcessor,
@@ -100,29 +108,32 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
 
       return false;
     } on Object catch (e) {
-      disconnect('Internal error: $e');
+      await disconnect('Internal error: $e');
       return false;
     }
   }
 
   Future<bool> _connectionInitialize(String baseUrl) async {
-    if ([SocketStatus.connected, SocketStatus.connecting].contains(socketState.status)) {
+    if ([SocketStatus.connected, SocketStatus.connecting]
+        .contains(socketState.status)) {
       return false;
     }
-    _notifySocketStatusInternal(SocketStatus.connecting, _connectingPhrase(baseUrl));
-    await Future<void>.delayed(const Duration(milliseconds: _baseDelayMs)); // simulating connection time
-    /*
-      if (_webSocket?.closeCode != null) {
-        _socketStateController.add(SocketState(statusType: SocketStatusType.disconnected, status: 'failed to connect!'));
-        return false;
-      }
-    */
+    _notifySocketStatusInternal(
+      SocketStatus.connecting,
+      _connectingPhrase(baseUrl),
+    );
+    await Future<void>.delayed(
+      const Duration(
+        milliseconds: _baseDelayMs,
+      ),
+    ); // simulating connection time
+
     return true;
   }
 
   Future<void> _connectionSuccessful() async {
     _notifySocketStatusInternal(SocketStatus.connected, _connectedPhrase);
-    _initSubscriptions();
+    await _initSubscriptions();
   }
 
   Future<void> _connectionUnsuccessful() async {}
@@ -142,7 +153,8 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   ///
   Future<void> _listenMessagerFromServer() async {
     await _fromServerMessagesSub?.cancel();
-    _fromServerMessagesSub = _echoStreamInternal.listen(_fromServerMessageInternal);
+    _fromServerMessagesSub =
+        _echoStreamInternal.listen(_fromServerMessageInternal);
   }
 
   Future<void> _listenMessagesToServer() async {
@@ -163,7 +175,10 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
       return;
     }
     if (socketState.status != SocketStatus.connected) {
-      _debugEventNotificationInternal(SocketLogEventType.warning, 'Trying to send message when not connected!');
+      _debugEventNotificationInternal(
+        SocketLogEventType.warning,
+        'Trying to send message when not connected!',
+      );
       return;
     }
     final outJsonMsg = _messageProcessor.serializeMessage(messageToServer);
@@ -176,7 +191,11 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   void _addMessageToSocketOutgoingInternal(Object input) {
     try {
       /// Platform implementation here
-      _debugEventNotificationInternal(SocketLogEventType.toServerMessage, 'to server', data: input.toString());
+      _debugEventNotificationInternal(
+        SocketLogEventType.toServerMessage,
+        'to server',
+        data: input.toString(),
+      );
       _websocketInternalController.add(input.toString());
     } on Object catch (e) {
       _debugEventNotificationInternal(
@@ -193,7 +212,10 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
       final data = input as Object?;
       final msgFromServer = _messageProcessor.deserializeMessage(data);
       if (msgFromServer == null) {
-        _debugEventNotificationInternal(SocketLogEventType.warning, 'Got NULL message from server!');
+        _debugEventNotificationInternal(
+          SocketLogEventType.warning,
+          'Got NULL message from server!',
+        );
         return;
       }
       _debugEventNotificationInternal(
@@ -223,7 +245,10 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
     }
     _socketState = SocketStateImpl(status: status, message: message);
     _socketStateController.add(_socketState);
-    _debugEventNotificationInternal(SocketLogEventType.socketStateChanged, message);
+    _debugEventNotificationInternal(
+      SocketLogEventType.socketStateChanged,
+      message,
+    );
   }
 
   void _debugEventNotificationInternal(
@@ -234,13 +259,15 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
     if (_debugEventController.isClosed) {
       return;
     }
-    _debugEventController.add(SocketLogEventImpl(
-      socketLogEventType: type,
-      status: _socketState.status,
-      message: message,
-      pingMs: pingDelayMs,
-      data: data,
-    ));
+    _debugEventController.add(
+      SocketLogEventImpl(
+        socketLogEventType: type,
+        status: _socketState.status,
+        message: message,
+        pingMs: pingDelayMs,
+        data: data,
+      ),
+    );
   }
 
   Future<void> _pingSocketState() async {
@@ -254,8 +281,13 @@ class WebsocketHandlerMock<T, Y> implements IWebSocketHandler<T, Y> {
   }
 
   void _isConnectionAlivePing() {
-    final msg = 'Ping socket. ${socketState.status == SocketStatus.connected ? "Connected." : "Disconnected."}';
-    _debugEventNotificationInternal(SocketLogEventType.ping, msg);
+    final sb = StringBuffer('Ping socket.');
+    if (socketState.status == SocketStatus.connected) {
+      sb.write('Connected.');
+    } else {
+      sb.write('Disconnected.');
+    }
+    _debugEventNotificationInternal(SocketLogEventType.ping, sb.toString());
   }
 
   ///

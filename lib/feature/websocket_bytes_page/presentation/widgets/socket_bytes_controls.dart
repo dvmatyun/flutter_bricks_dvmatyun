@@ -1,20 +1,24 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../../../../websocket_universal.dart';
 
-/// SocketBasicControls
-class SocketBasicControls extends StatelessWidget {
-  const SocketBasicControls({
+/// SocketBytesControls
+class SocketBytesControls extends StatelessWidget {
+  const SocketBytesControls({
     required this.socketHandler,
     Key? key,
   }) : super(key: key);
 
-  final IWebSocketHandler<ISocketMessage<dynamic>, IMessageToServer> socketHandler;
+  final IWebSocketHandler<List<int>, List<int>> socketHandler;
 
-  IMessageToServer get fakeMessage => MessageToServerImpl.duo(
+  IMessageToServer get rawMessage => MessageToServerImpl.duo(
         host: 'host',
         topic1: 'topic1',
         data: '{"payload": "some-payload"}',
       );
+
+  List<int> get fakeMessage => utf8.encode(jsonEncode(rawMessage.toJson()));
 
   @override
   Widget build(BuildContext context) => Row(
@@ -35,4 +39,4 @@ class SocketBasicControls extends StatelessWidget {
           ),
         ],
       );
-} // SocketBasicControls
+} // SocketBytesControls

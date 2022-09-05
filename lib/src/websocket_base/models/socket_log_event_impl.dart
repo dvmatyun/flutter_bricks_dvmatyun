@@ -1,9 +1,9 @@
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/enums/socket_log_event_type.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/interfaces/socket_log_event.dart';
-import 'package:flutter_bricks_dvmatyun/dataflow/websockets/websocket_base/models/socket_state_impl.dart';
-
+import '../enums/socket_log_event_type.dart';
 import '../enums/socket_status_type.dart';
+import '../interfaces/socket_log_event.dart';
+import 'socket_state_impl.dart';
 
+/// Common log event implementation for websocket
 class SocketLogEventImpl extends SocketStateImpl implements ISocketLogEvent {
   @override
   final SocketLogEventType socketLogEventType;
@@ -14,6 +14,7 @@ class SocketLogEventImpl extends SocketStateImpl implements ISocketLogEvent {
   @override
   final int pingMs;
 
+  /// Constructor
   SocketLogEventImpl({
     required this.socketLogEventType,
     required SocketStatus status,
