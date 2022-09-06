@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bricks_dvmatyun/feature/sliding_notification/presentation/sliding_notification_page.dart';
-import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_mocked_page.dart';
 import 'package:flutter_bricks_dvmatyun/feature/websocket_base_page/presentation/websocket_base_platform_page.dart';
 import 'package:flutter_bricks_dvmatyun/feature/websocket_bytes_page/presentation/websocket_bytes_platform_page.dart';
 
@@ -71,12 +70,6 @@ class _HomePageState extends State<HomePage> {
                   Navigator.of(context).push(SlidingNotificationPage.getRoute());
                 },
                 child: const Text('To sliding notifications page'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).push(WebsocketBaseMockedPage.getRoute());
-                },
-                child: const Text('To websocket mocked page'),
               ),
               TextButton(
                 onPressed: () {

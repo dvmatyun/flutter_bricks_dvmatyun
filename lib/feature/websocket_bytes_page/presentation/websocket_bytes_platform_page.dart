@@ -38,7 +38,6 @@ class _WebsocketBytesPlatformPageState extends State<WebsocketBytesPlatformPage>
     _socketHandler = IWebSocketHandler.createClient(
       'ws://127.0.0.1:42627/websocket',
       messageProcessor,
-      skipPingMessages: false,
     );
   }
 

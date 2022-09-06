@@ -39,7 +39,6 @@ class _WebsocketBasePlatformPageState extends State<WebsocketBasePlatformPage> {
     _socketHandler = IWebSocketHandler.createClient(
       'wss://ws.postman-echo.com/raw',
       messageProcessor,
-      skipPingMessages: false,
     );
   }
 
